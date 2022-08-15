@@ -288,4 +288,9 @@ public class MemberRepositoryTest {
         // when
         List<Member> result = memberRepository.findLockByUsername("member1"); // query를 보는 것이 중요. select ... for update
     }
+
+    @Test
+    public void callCustom() {
+        List<Member> result = memberRepository.findMemberCustom();
+    }
 }
