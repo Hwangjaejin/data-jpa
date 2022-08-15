@@ -3,6 +3,10 @@ package study.datajpa.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.transaction.annotation.Transactional;
@@ -168,5 +172,41 @@ public class MemberRepositoryTest {
         Optional<Member> aaa2 = memberRepository.findOptionalByUsername("AAA");
         Optional<Member> qwqwqw = memberRepository.findOptionalByUsername("qwqwqw");
         System.out.println("qwqwqw = " + qwqwqw); // 데이터가 있을 수도 없을 수도 있으면 Optional 쓰는것이 맞다. 결과가 2개 이상이면 예외발생.
+    }
+
+    @Test
+    public void paging() {
+        // given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+        // 스프링 데이터 JPA는 페이지를 0부터 시작
+
+        // when
+        // 반환타입에 따라 totalCount를 계산하는 쿼리를 날릴지 안날릴지 결정함.
+        Page<Member> page = memberRepository.findByAge(age, pageRequest); // totalCount 계산
+
+        // toMap은 엔티티가 아니라 DTO이기 때문에 API로 반환해도 된다.
+        Page<MemberDto> toMap = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+
+        // then
+        List<Member> content = page.getContent();
+        long totalElements = page.getTotalElements();
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+        System.out.println("totalElements = " + totalElements);
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0); // 현재 페이지 넘버
+        assertThat(page.getTotalPages()).isEqualTo(2); // 총 페이지 개수
+        assertThat(page.isFirst()).isTrue(); // 첫 번째 페이지인지
+        assertThat(page.hasNext()).isTrue(); // 다음 페이지가 있는지
     }
 }
